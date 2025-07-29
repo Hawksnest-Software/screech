@@ -1,0 +1,62 @@
+# Build directories
+builddir-*/
+build/
+*.o
+*.a
+*.so
+*.dylib
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# macOS specific
+.DS_Store
+*.dSYM/
+
+# Compiled executables
+screech
+screech_signed
+
+# Meson files
+meson-logs/
+meson-private/
+
+# Subprojects (if using wrap files)
+subprojects/packagecache/
+
+# Debug and log files
+*.log
+debug.txt
+
+# Temporary files
+*.tmp
+*.temp
+
+# Code signing files (keep entitlements but ignore certificates)
+*.p12
+*.mobileprovision
+
+# Network capture files
+*.pcap
+*.pcapng
+
+# Test output
+test_results/
+coverage/
+
+# macOS build artifacts
+*.app/
+*.framework/
+
+# Linux build artifacts
+*.deb
+*.rpm
+
+# Documentation build
+docs/_build/
+docs/html/
+docs/latex/

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Network Extension Framework for VPN functionality -->
+    <key>com.apple.developer.networking.networkextension</key>
+    <array>
+        <string>packet-tunnel-provider</string>
+        <string>packet-tunnel-provider-systemextension</string>
+        <string>content-filter-provider</string>
+        <string>content-filter-provider-systemextension</string>
+    </array>
+    
+    <!-- System Extension for VPN service -->
+    <key>com.apple.developer.system-extension.install</key>
+    <true/>
+    
+    <!-- Disable App Sandbox for VPN operation -->
+    <key>com.apple.security.app-sandbox</key>
+    <false/>
+    
+    <!-- Network access for VPN tunneling -->
+    <key>com.apple.security.network.client</key>
+    <true/>
+    <key>com.apple.security.network.server</key>
+    <true/>
+    
+    <!-- VPN configuration access -->
+    <key>com.apple.security.automation.apple-events</key>
+    <true/>
+</dict>
+</plist>

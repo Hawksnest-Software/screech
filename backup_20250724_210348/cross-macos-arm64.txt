@@ -1,0 +1,31 @@
+[binaries]
+c = '/opt/clang/bin/clang'
+cpp = '/opt/clang/bin/clang++'
+c_ld = '/opt/clang/bin/ld64.lld'
+cpp_ld = '/opt/clang/bin/ld64.lld'
+cpp_ld_for_build = '/opt/clang/bin/ld64.lld'
+ar = '/opt/clang/bin/llvm-ar'
+strip = '/opt/clang/bin/llvm-strip'
+pkg-config = 'pkg-config'
+
+[host_machine]
+system = 'darwin'
+cpu_family = 'aarch64'
+cpu = 'arm64'
+endian = 'little'
+
+[properties]
+sys_root = '/home/burningserenity/osxcross/target/SDK/MacOSX15.5.sdk'
+c_stdlib = 'libc'
+cxx_stdlib = 'libc'
+
+[options]
+include_paths = ['/home/burningserenity/osxcross/target/SDK/MacOSX15.5.sdk/usr/include',
+  '/home/burningserenity/osxcross/target/SDK/MacOSX15.5.sdk/usr/local/include', '/home/burningserenity/Documents/hawksnestsoftware/screech/subprojects/pcapplusplus/Pcap++/header', '/home/burningserenity/Documents/hawksnestsoftware/screech/subprojects/pcapplusplus/Common++/header', '/home/burningserenity/Documents/hawksnestsoftware/screech/subprojects/pcapplusplus/Packet++/header'] 
+
+library_paths = ['/home/burningserenity/osxcross/target/SDK/MacOSX15.5.sdk/usr/lib',
+  '/home/burningserenity/osxcross/target/SDK/MacOSX15.5.sdk/usr/lib64',
+  '/home/burningserenity/osxcross/target/SDK/MacOSX15.5.sdk/usr/local/lib',
+  '/home/burningserenity/osxcross/target/SDK/MacOSX15.5.sdk/usr/local/lib64', '/home/burningserenity/Documents/hawksnestsoftware/screech/subprojects/pcapplusplus/build-arm64/Packet++','/home/burningserenity/Documents/hawksnestsoftware/screech/subprojects/pcapplusplus/build-arm64/Common++','/home/burningserenity/Documents/hawksnestsoftware/screech/subprojects/pcapplusplus/Pcap++']
+c_args = ['-arch', 'arm64']
+cpp_args = ['-arch', 'arm64']

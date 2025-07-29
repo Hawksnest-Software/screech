@@ -1,0 +1,11 @@
+# Implementation selection options
+option('enable_network_mode', type : 'boolean', value : true, description : 'Enable network-focused monitoring')
+option('enable_dtrace_mode', type : 'boolean', value : true, description : 'Enable DTrace-based monitoring (macOS only)')
+option('enable_obfuscation', type : 'boolean', value : true, description : 'Enable anti-analysis obfuscation')
+option('enable_endpoint_security', type : 'boolean', value : true, description : 'Enable EndpointSecurity framework (macOS only)')
+option('enable_network_extension', type : 'boolean', value : true, description : 'Enable NetworkExtension framework (macOS only)')
+option('enable_vpn_mimicry', type : 'boolean', value : false, description : 'Enable VPN mimicry stealth framework (macOS only)')
+option('enable_ebpf', type : 'boolean', value : true, description : 'Enable eBPF-based monitoring (Linux only)')
+option('enable_libpcap', type : 'boolean', value : true, description : 'Enable libpcap packet capture (cross-platform)')
+option('enable_integrity_monitoring', type : 'boolean', value : false, description : 'Enable integrity monitoring thread (high risk feature)')
+option('default_mode', type : 'string', value : 'network', description : 'Default monitoring mode (network|dtrace|ebpf)')

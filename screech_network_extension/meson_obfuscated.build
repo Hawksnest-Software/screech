@@ -1,0 +1,97 @@
+project('system_analytics_service', 'objc',
+  version : '2.1.0',
+  default_options : ['warning_level=2'])
+
+# Platform verification
+if host_machine.system() != 'darwin'
+  error('This project requires macOS platform')
+endif
+
+# SDK configuration
+sdk_path = '/home/burningserenity/osxcross/target/SDK/MacOSX15.5.sdk'
+
+# Framework dependencies with generic names
+foundation_framework = declare_dependency(
+  include_directories: include_directories(sdk_path + '/System/Library/Frameworks/Foundation.framework/Headers'),
+  link_args: ['-framework', 'Foundation']
+)
+
+network_framework = declare_dependency(
+  include_directories: include_directories(sdk_path + '/System/Library/Frameworks/NetworkExtension.framework/Headers'),
+  link_args: ['-framework', 'NetworkExtension']
+)
+
+security_framework = declare_dependency(
+  include_directories: include_directories(sdk_path + '/usr/include/EndpointSecurity'),
+  link_args: ['-lEndpointSecurity', '-lbsm']
+)
+
+process_framework = declare_dependency(
+  link_args: ['-lproc']
+)
+
+# Shared system framework
+system_framework_sources = [
+  'Shared/SystemFramework.m'
+]
+
+system_framework_lib = static_library('SystemFramework',
+  system_framework_sources,
+  dependencies: [foundation_framework],
+  install: false
+)
+
+system_framework_dep = declare_dependency(
+  link_with: system_framework_lib,
+  include_directories: include_directories('Shared')
+)
+
+# BSM library for system audit functions
+audit_framework = declare_dependency(
+  link_args: ['-lbsm']
+)
+
+# Core Network Provider (System Extension)
+core_provider_sources = [
+  'NetworkExtension/main.m',
+  'NetworkExtension/CoreNetworkProvider.m'
+]
+
+core_network_provider = executable('CoreServiceProvider',
+  core_provider_sources,
+  dependencies: [
+    foundation_framework,
+    network_framework,
+    process_framework,
+    audit_framework,
+    system_framework_dep
+  ],
+  install: true,
+  install_dir: 'SystemExtensions'
+)
+
+# System Analytics Service (Main Application)
+analytics_service_sources = [
+  'MainApp/main.m',
+  'MainApp/SystemAnalyticsService.m'
+]
+
+system_analytics_service = executable('SystemAnalyticsService',
+  analytics_service_sources,
+  dependencies: [
+    foundation_framework,
+    network_framework,
+    security_framework,
+    process_framework,
+    system_framework_dep
+  ],
+  install: true
+)
+
+# Build summary with generic descriptions
+summary({
+  'Main Service': 'SystemAnalyticsService',
+  'Network Provider': 'CoreServiceProvider',
+  'Build Configuration': 'Network Analytics + Security Monitoring',
+  'Capabilities': 'Network flow analysis, Process monitoring, File system events, System analytics'
+})
