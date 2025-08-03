@@ -17,6 +17,8 @@ namespace EventLogger {
 class EventLoggerEngine::Impl {
 public:
     std::string logDirectory;
+    bool remoteLoggingEnabled = false;
+    RemoteLogging::RemoteLoggerEngine* remoteLogger = nullptr;
     
     Impl() {
         // Use current user's home directory by default
@@ -75,6 +77,17 @@ public:
             return;
         }
         
+        // Send to remote logger if enabled
+        if (remoteLoggingEnabled && remoteLogger && remoteLogger->isConnected()) {
+            // Extract app bundle name first (for macOS), then fall back to process name
+            std::string programNameForLog = extractAppBundleName(processPath);
+            if (programNameForLog.empty() || programNameForLog == "unknown") {
+                programNameForLog = processName.empty() ? "unknown_process" : processName;
+            }
+            remoteLogger->logEventWithProgramName(programNameForLog, eventType, processName, processPath, details);
+        }
+        
+        // Also write to local file
         std::string appName = extractAppBundleName(processPath);
         std::string timestamp = getTimestampForFilename();
         
@@ -107,9 +120,94 @@ void EventLoggerEngine::setLogDirectory(const std::string& directory) {
     }
 }
 
+bool EventLoggerEngine::enableRemoteLogging(const std::string& serverHost, int serverPort) {
+    if (!pImpl->remoteLogger) {
+        pImpl->remoteLogger = &RemoteLogging::getGlobalRemoteLogger();
+    }
+    
+    RemoteLogging::RemoteLogConfig config;
+    config.serverHost = serverHost;
+    config.serverPort = serverPort;
+    config.facility = "local0";
+    config.appName = "monitor";
+    config.useHostnamePrefix = true;
+    config.fallbackToLocal = true;
+    
+    if (pImpl->remoteLogger->initialize(config)) {
+        pImpl->remoteLoggingEnabled = true;
+        return true;
+    }
+    
+    return false;
+}
+
+void EventLoggerEngine::disableRemoteLogging() {
+    if (pImpl->remoteLogger) {
+        pImpl->remoteLogger->shutdown();
+    }
+    pImpl->remoteLoggingEnabled = false;
+}
+
+bool EventLoggerEngine::isRemoteLoggingEnabled() const {
+    return pImpl->remoteLoggingEnabled && pImpl->remoteLogger && pImpl->remoteLogger->isConnected();
+}
+
 void EventLoggerEngine::logEvent(EventType type, const std::string& processName, 
                                  const std::string& processPath, const std::string& details) {
-    pImpl->writeEventToLog("EVENT", processName, processPath, details);
+    // Convert EventType enum to string for logging
+    std::string eventTypeStr;
+    switch (type) {
+        case EventType::PROCESS_EXEC:
+            eventTypeStr = "PROC_EXEC";
+            break;
+        case EventType::PROCESS_FORK:
+            eventTypeStr = "PROC_FORK";
+            break;
+        case EventType::PROCESS_EXIT:
+            eventTypeStr = "PROC_EXIT";
+            break;
+        case EventType::FILE_OPEN:
+            eventTypeStr = "FILE_OPEN";
+            break;
+        case EventType::FILE_CLOSE:
+            eventTypeStr = "FILE_CLOSE";
+            break;
+        case EventType::FILE_WRITE:
+            eventTypeStr = "FILE_WRITE";
+            break;
+        case EventType::FILE_CREATE:
+            eventTypeStr = "FILE_CREATE";
+            break;
+        case EventType::FILE_DELETE:
+            eventTypeStr = "FILE_DELETE";
+            break;
+        case EventType::FILE_RENAME:
+            eventTypeStr = "FILE_RENAME";
+            break;
+        case EventType::NETWORK_CONNECT:
+            eventTypeStr = "NET_CONN";
+            break;
+        case EventType::NETWORK_DISCONNECT:
+            eventTypeStr = "NET_DISCONN";
+            break;
+        case EventType::NETWORK_DATA:
+            eventTypeStr = "NET_DATA";
+            break;
+        case EventType::NETWORK_INTERFACE_CHANGE:
+            eventTypeStr = "NET_IFACE";
+            break;
+        case EventType::NETWORK_DNS:
+            eventTypeStr = "NET_DNS";
+            break;
+        case EventType::SECURITY_ALERT:
+            eventTypeStr = "SECURITY";
+            break;
+        default:
+            eventTypeStr = "UNKNOWN";
+            break;
+    }
+    
+    pImpl->writeEventToLog(eventTypeStr, processName, processPath, details);
 }
 
 void EventLoggerEngine::logProcessEvent(const std::string& eventType, const std::string& processName, 

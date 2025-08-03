@@ -24,12 +24,63 @@ endif
 
 # Define compiler flags for polymorphic features
 compile_args = []
-if get_option('enable_network_mode')
-  compile_args += ['-DENABLE_NETWORK_MODE=1']
+
+# Add STDOUT_DEBUG macro for debug builds
+if get_option('buildtype') == 'debug'
+  compile_args += ['-DSTDOUT_DEBUG=1']
 endif
-if get_option('enable_obfuscation')
-  compile_args += ['-DENABLE_OBFUSCATION=1']
+
+# Granular obfuscation compile flags
+if get_option('enable_function_pointer_obfuscation')
+  compile_args += ['-DENABLE_FUNCTION_POINTER_OBFUSCATION=1']
 endif
+if get_option('enable_anti_disassembly')
+  compile_args += ['-DENABLE_ANTI_DISASSEMBLY=1']
+endif
+if get_option('enable_memory_scrambling')
+  compile_args += ['-DENABLE_MEMORY_SCRAMBLING=1']
+endif
+if get_option('enable_syscall_randomization')
+  compile_args += ['-DENABLE_SYSCALL_RANDOMIZATION=1']
+endif
+if get_option('enable_debugger_detection')
+  compile_args += ['-DENABLE_DEBUGGER_DETECTION=1']
+endif
+if get_option('enable_vm_detection')
+  compile_args += ['-DENABLE_VM_DETECTION=1']
+endif
+if get_option('enable_env_checks')
+  compile_args += ['-DENABLE_ENV_CHECKS=1']
+endif
+if get_option('enable_variant_generation')
+  compile_args += ['-DENABLE_VARIANT_GENERATION=1']
+endif
+if get_option('enable_string_obfuscation')
+  compile_args += ['-DENABLE_STRING_OBFUSCATION=1']
+endif
+if get_option('enable_timing_obfuscation')
+  compile_args += ['-DENABLE_TIMING_OBFUSCATION=1']
+endif
+if get_option('enable_direct_syscalls')
+  compile_args += ['-DENABLE_DIRECT_SYSCALLS=1']
+endif
+if get_option('enable_ptrace_protection')
+  compile_args += ['-DENABLE_PTRACE_PROTECTION=1']
+endif
+if get_option('enable_anti_debug_ptrace')
+  compile_args += ['-DENABLE_ANTI_DEBUG_PTRACE=1']
+endif
+if get_option('enable_window_detection')
+  compile_args += ['-DENABLE_WINDOW_DETECTION=1']
+endif
+if get_option('enable_memory_protection')
+  compile_args += ['-DENABLE_MEMORY_PROTECTION=1']
+endif
+if get_option('enable_runtime_introspection')
+  compile_args += ['-DENABLE_RUNTIME_INTROSPECTION=1']
+endif
+
+# Other feature flags
 if get_option('enable_libpcap')
   compile_args += ['-DENABLE_LIBPCAP=1']
 endif
@@ -42,9 +93,6 @@ endif
 
 # macOS-only features
 if host_machine.system() == 'darwin'
-  if get_option('enable_dtrace_mode')
-    compile_args += ['-DENABLE_DTRACE_MODE=1']
-  endif
   if get_option('enable_endpoint_security')
     compile_args += ['-DENABLE_ENDPOINT_SECURITY=1']
   endif
@@ -64,11 +112,100 @@ endif
 default_mode = get_option('default_mode')
 if default_mode == 'network'
   compile_args += ['-DDEFAULT_MODE_NETWORK=1']
-elif default_mode == 'dtrace'
-  compile_args += ['-DDEFAULT_MODE_DTRACE=1']
 endif
 
 add_global_arguments(compile_args, language : ['c', 'cpp', 'objc', 'objcpp'])
+
+# Generate entitlements file based on enabled features (macOS only)
+if host_machine.system() == 'darwin'
+  # Collect enabled features for entitlements generation
+  enabled_features = []
+  
+  # Core features that are always enabled by default
+  if get_option('enable_endpoint_security')
+    enabled_features += ['enable_endpoint_security']
+  endif
+  if get_option('enable_network_extension')
+    enabled_features += ['enable_network_extension']
+  endif
+  if get_option('enable_libpcap')
+    enabled_features += ['enable_libpcap']
+  endif
+  
+  # Obfuscation features (only add if enabled)
+  if get_option('enable_function_pointer_obfuscation')
+    enabled_features += ['enable_function_pointer_obfuscation']
+  endif
+  if get_option('enable_anti_disassembly')
+    enabled_features += ['enable_anti_disassembly']
+  endif
+  if get_option('enable_memory_scrambling')
+    enabled_features += ['enable_memory_scrambling']
+  endif
+  if get_option('enable_syscall_randomization')
+    enabled_features += ['enable_syscall_randomization']
+  endif
+  if get_option('enable_debugger_detection')
+    enabled_features += ['enable_debugger_detection']
+  endif
+  if get_option('enable_vm_detection')
+    enabled_features += ['enable_vm_detection']
+  endif
+  if get_option('enable_env_checks')
+    enabled_features += ['enable_env_checks']
+  endif
+  if get_option('enable_variant_generation')
+    enabled_features += ['enable_variant_generation']
+  endif
+  if get_option('enable_string_obfuscation')
+    enabled_features += ['enable_string_obfuscation']
+  endif
+  if get_option('enable_timing_obfuscation')
+    enabled_features += ['enable_timing_obfuscation']
+  endif
+  if get_option('enable_direct_syscalls')
+    enabled_features += ['enable_direct_syscalls']
+  endif
+  if get_option('enable_ptrace_protection')
+    enabled_features += ['enable_ptrace_protection']
+  endif
+  if get_option('enable_anti_debug_ptrace')
+    enabled_features += ['enable_anti_debug_ptrace']
+  endif
+  if get_option('enable_window_detection')
+    enabled_features += ['enable_window_detection']
+  endif
+  if get_option('enable_memory_protection')
+    enabled_features += ['enable_memory_protection']
+  endif
+  if get_option('enable_runtime_introspection')
+    enabled_features += ['enable_runtime_introspection']
+  endif
+  if get_option('enable_integrity_monitoring')
+    enabled_features += ['enable_integrity_monitoring']
+  endif
+  if get_option('enable_vpn_mimicry')
+    enabled_features += ['enable_vpn_mimicry']
+  endif
+  
+  # Generate entitlements file
+  python3 = find_program('python3', required: true)
+  entitlements_generator = files('config/generate_entitlements.py')
+  
+  generated_entitlements = custom_target('generate_entitlements',
+    output: 'screech.entitlements',
+    command: [
+      python3,
+      entitlements_generator,
+      '--output', '@OUTPUT@',
+      '--features'
+    ] + enabled_features + ['--verbose'],
+    build_by_default: true,
+    install: false
+  )
+  
+  message('Generating entitlements for features: ' + ' '.join(enabled_features))
+endif
 
 # Get compiler
 cc = meson.get_compiler('c')
@@ -89,6 +226,9 @@ if host_machine.system() == 'darwin'
   # EndpointSecurity is a library, not a framework in the SDK
   endpointsecurity_framework = cc.find_library('EndpointSecurity', required: false)
   networkextension_framework = dependency('appleframeworks', modules : ['NetworkExtension'], required : true)
+  # Core Graphics and AppKit frameworks for obfuscation bridge
+  coregraphics_framework = dependency('appleframeworks', modules : ['CoreGraphics'], required : true)
+  appkit_framework = dependency('appleframeworks', modules : ['AppKit'], required : true)
   
   # System libraries
   pthread_dep = dependency('threads', required : true)
@@ -100,6 +240,8 @@ else
   security_framework = declare_dependency()
   endpointsecurity_framework = declare_dependency()
   networkextension_framework = declare_dependency()
+  coregraphics_framework = declare_dependency()
+  appkit_framework = declare_dependency()
   
   # System libraries for Linux
   pthread_dep = dependency('threads', required : true)
@@ -119,6 +261,7 @@ inc_dirs = include_directories(
   'libs/obfuscation',
   'libs/debug_logging',
   'libs/event_logger',
+  'libs/remote_logging',
   'libs/macos/process_monitor',
   'libs/macos/file_monitor',
   'libs/libpcap_monitor',
@@ -129,7 +272,7 @@ inc_dirs = include_directories(
 if host_machine.system() == 'darwin'
   # macOS obfuscation utilities
   string_obfuscation_macos_sources = files([
-    'src/obfuscation/mac/string_obfuscation.c'
+    'libs/obfuscation/mac/string_obfuscation.c'
   ])
 
   string_obfuscation_macos_lib = static_library('string_obfuscation_macos',
@@ -139,7 +282,7 @@ if host_machine.system() == 'darwin'
   )
 
   function_obfuscation_macos_sources = files([
-    'src/obfuscation/mac/function_obfuscation.c'
+    'libs/obfuscation/mac/function_obfuscation.c'
   ])
 
   function_obfuscation_macos_lib = static_library('function_obfuscation_macos',
@@ -149,15 +292,29 @@ if host_machine.system() == 'darwin'
     install : false
   )
 
+  # Conditional direct syscalls library
+  direct_syscalls_sources = []
+  if get_option('enable_direct_syscalls')
+    direct_syscalls_sources = files([
+      'libs/obfuscation/mac/direct_syscalls.c'
+    ])
+  endif
+
+  # Conditional variant generator (contains dangerous ptrace calls)
+  variant_generator_sources = []
+  if get_option('enable_variant_generation') or get_option('enable_ptrace_protection') or get_option('enable_anti_debug_ptrace')
+    variant_generator_sources = files([
+      'libs/obfuscation/mac/variant_generator.c'
+    ])
+  endif
+  
   # macOS obfuscation engine (stealth_logging redirects to debug_logging)
   obfuscation_macos_sources = files([
-    'src/obfuscation/mac/obfuscation_engine.c',
-    'src/obfuscation/mac/api_misdirection.c',
-    'src/obfuscation/mac/call_diversification.c',
-    'src/obfuscation/mac/variant_generator.c',
-    'src/obfuscation/mac/timing_obfuscation.c',
-    'src/obfuscation/obfuscation_config.c'
-  ])
+    'libs/obfuscation/mac/api_misdirection.c',
+    'libs/obfuscation/mac/call_diversification.c',
+    'libs/obfuscation/mac/timing_obfuscation.c',
+    'libs/obfuscation/mac/macos_obfuscation_bridge.m'
+  ]) + direct_syscalls_sources + variant_generator_sources
 
   obfuscation_lib = static_library('obfuscation_macos_engine',
     obfuscation_macos_sources,
@@ -170,7 +327,7 @@ if host_machine.system() == 'darwin'
 elif host_machine.system() == 'linux'
   # Linux obfuscation utilities (placeholder)
   string_obfuscation_linux_sources = files([
-    'src/obfuscation/linux/string_obfuscation.c'
+    'libs/obfuscation/linux/string_obfuscation.c'
   ])
 
   string_obfuscation_linux_lib = static_library('string_obfuscation_linux',
@@ -180,7 +337,7 @@ elif host_machine.system() == 'linux'
   )
 
   function_obfuscation_linux_sources = files([
-    'src/obfuscation/linux/function_obfuscation.c'
+    'libs/obfuscation/linux/function_obfuscation.c'
   ])
 
   function_obfuscation_linux_lib = static_library('function_obfuscation_linux',
@@ -190,10 +347,18 @@ elif host_machine.system() == 'linux'
     install : false
   )
 
+  # Conditional direct syscalls library for Linux
+  direct_syscalls_linux_sources = []
+  if get_option('enable_direct_syscalls')
+    direct_syscalls_linux_sources = files([
+      'libs/obfuscation/mac/direct_syscalls.c'  # Same file works for both platforms
+    ])
+  endif
+
   # Linux obfuscation engine (placeholder)
   obfuscation_linux_sources = files([
-    'src/obfuscation/linux/obfuscation_engine.c'
-  ])
+    'libs/obfuscation/linux/obfuscation_engine.c'
+  ]) + direct_syscalls_linux_sources
 
   obfuscation_lib = static_library('obfuscation_linux_engine',
     obfuscation_linux_sources,
@@ -204,27 +369,8 @@ elif host_machine.system() == 'linux'
   )
 endif
 
-# macOS bridge (Objective-C for stealthy operations)
+# macOS VPN Mimicry Framework - conditional compilation
 if host_machine.system() == 'darwin'
-  macos_bridge_sources = files([
-    'src/obfuscation/mac/macos_obfuscation_bridge.m'
-  ])
-
-  macos_bridge_lib = static_library('macos_bridge',
-    macos_bridge_sources,
-    include_directories : inc_dirs,
-    dependencies : [
-      foundation_dep,
-      security_framework,
-      pthread_dep,
-      dl_dep,
-      proc_dep
-    ],
-    link_with : [string_obfuscation_macos_lib, function_obfuscation_macos_lib],
-    install : false
-  )
-
-  # VPN Mimicry Framework - conditional compilation
   if get_option('enable_vpn_mimicry')
     vpn_mimicry_sources = files([  
       'screech_network_extension/Shared/VPNMimicryFramework.m',  
@@ -353,6 +499,18 @@ debug_logger_lib = static_library('debug_logger',
   install : false
 )
 
+# Remote Logger library (cross-platform)
+remote_logger_sources = files([
+  'libs/remote_logging/RemoteLogger.cpp'
+])
+
+remote_logger_lib = static_library('remote_logger',
+  remote_logger_sources,
+  include_directories : inc_dirs,
+  dependencies : [pthread_dep],
+  install : false
+)
+
 # Event Logger library (cross-platform)
 event_logger_sources = files([
   'libs/event_logger/EventLogger.cpp'
@@ -362,20 +520,17 @@ event_logger_lib = static_library('event_logger',
   event_logger_sources,
   include_directories : inc_dirs,
   dependencies : [pthread_dep],
+  link_with : [remote_logger_lib],
   install : false
 )
 
-# Core sources
-core_sources = files([
-  'src/core/unified_monitor.cpp',
-  'src/core/detection_examples.cpp'
-])
+# Note: Core sources are now integrated into the main executable
 
 # Individual implementation libraries for macOS
 if host_machine.system() == 'darwin'
   # Collect enabled implementation libraries
   platform_impl_libs = []
-  if get_option('enable_network_mode')
+  if get_option('enable_network_extension')
     platform_impl_libs += [macos_network_extension_lib]
   endif
 
@@ -432,11 +587,11 @@ endif
 # Main executable sources (platform-specific)
 if host_machine.system() == 'darwin'
   main_sources = files([
-    'src/core/unified_monitor_working_macos.mm'
+    'src/core/screech_main.cpp'
   ])
 else
   main_sources = files([
-    'src/core/unified_monitor_working.cpp'
+    'src/core/screech_main.cpp'
   ])
 endif
 
@@ -444,6 +599,7 @@ endif
 link_libraries = [
   obfuscation_lib,
   debug_logger_lib,
+  remote_logger_lib,
   event_logger_lib
 ]
 
@@ -455,7 +611,6 @@ endif
 # Add platform implementation libraries based on enabled modes
 if host_machine.system() == 'darwin'
   link_libraries += [
-    macos_bridge_lib,
     process_monitor_lib,
     file_monitor_lib
   ]
@@ -477,6 +632,8 @@ exe_deps = [
   security_framework,
   endpointsecurity_framework,
   networkextension_framework,
+  coregraphics_framework,
+  appkit_framework,
   pthread_dep,
   dl_dep,
   proc_dep,
@@ -494,7 +651,7 @@ if get_option('enable_libpcap')
 endif
 
 # Main executable
-screech_exe = executable('screech',
+monitor_exe = executable('monitor',
   main_sources,
   include_directories : inc_dirs,
   link_with : link_libraries,
@@ -508,14 +665,14 @@ if host_machine.system() == 'darwin'
   codesign = find_program('codesign', required : false)
   if codesign.found()
     custom_target('codesign',
-      input : screech_exe,
-      output : 'screech_signed',
+      input : [monitor_exe, generated_entitlements],
+      output : 'monitor_signed',
       command : [
         codesign,
         '--force',
         '--sign', '-',
-        '--entitlements', meson.current_source_dir() / 'config/screech.entitlements',
-        '@INPUT@'
+        '--entitlements', '@INPUT1@',
+        '@INPUT0@'
       ],
       build_by_default : true
     )

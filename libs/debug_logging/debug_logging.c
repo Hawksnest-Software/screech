@@ -16,10 +16,15 @@ static bool logging_initialized = false;
 void debug_log_init(void) {
     if (logging_initialized) return;
     
-#if defined(DEBUG) || defined(_DEBUG) || !defined(NDEBUG)
+#ifdef STDOUT_DEBUG
+    // If STDOUT_DEBUG macro is defined (debug buildtype), set to debug level
+    current_log_level = DEBUG_LOG_DEBUG;
+#elif defined(_DEBUG) || !defined(NDEBUG)
+    // For other debug builds, also use debug level
     current_log_level = DEBUG_LOG_DEBUG;
 #else
-    current_log_level = DEBUG_LOG_SILENT;
+    // For release builds, set to warning level
+    current_log_level = DEBUG_LOG_WARNING;
 #endif
     
     logging_initialized = true;

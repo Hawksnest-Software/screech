@@ -29,9 +29,7 @@ public:
     ~Impl() {
         stop();
 #ifdef __APPLE__
-        if (monitorQueue) {
-            dispatch_release(monitorQueue);
-        }
+        // monitorQueue will be automatically released by ARC
 #endif
     }
     

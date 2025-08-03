@@ -9,6 +9,7 @@
 #include <string>
 #include <functional>
 #include <memory>
+#include "../remote_logging/RemoteLogger.h"
 
 namespace EventLogger {
 
@@ -45,6 +46,11 @@ public:
     
     bool initialize();
     void setLogDirectory(const std::string& directory);
+    
+    // Remote logging configuration
+    bool enableRemoteLogging(const std::string& serverHost, int serverPort = 514);
+    void disableRemoteLogging();
+    bool isRemoteLoggingEnabled() const;
     
     // Main logging function
     void logEvent(EventType type, const std::string& processName, 

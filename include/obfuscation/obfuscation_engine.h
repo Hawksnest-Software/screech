@@ -62,6 +62,14 @@ bool check_vm_indicators(const char* model);
 // Function registry
 void init_function_registry(void);
 
+// String obfuscation integration (only available when ENABLE_STRING_OBFUSCATION is defined)
+#ifdef ENABLE_STRING_OBFUSCATION
+void init_string_obfuscation_subsystem(void);
+bool perform_enhanced_environment_checks(void);
+bool perform_enhanced_vm_detection(void);
+void cleanup_string_obfuscation_subsystem(void);
+#endif
+
 // Initialization
 void init_obfuscation_engine(void);
 void cleanup_obfuscation_engine(void);

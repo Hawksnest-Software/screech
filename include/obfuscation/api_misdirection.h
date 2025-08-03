@@ -19,6 +19,8 @@ extern "C" {
 #define MAX_FAKE_API_CALLS 64
 #define MAX_MISDIRECTION_DEPTH 8
 #define DECOY_NAME_MAX_LEN 128
+#define MAX_MISDIRECTION_TARGETS 16
+#define MAX_FAKE_APIS 64
 
 // Decoy function types
 typedef enum {
@@ -61,6 +63,8 @@ typedef struct {
     void* real_address;
     uint32_t call_count;
     bool intercept_enabled;
+    uint32_t api_hash;
+    uint32_t call_frequency;
 } fake_api_call_t;
 
 // Misdirection layer for function indirection
@@ -80,6 +84,7 @@ typedef struct {
     uint32_t fake_api_count;
     uint32_t layer_count;
     bool misdirection_active;
+    bool selective_mode;
     uint32_t activation_seed;
 } misdirection_registry_t;
 

@@ -27,6 +27,7 @@ meson-private/
 
 # Subprojects (if using wrap files)
 subprojects/packagecache/
+subprojects/pcapplusplus/
 
 # Debug and log files
 *.log

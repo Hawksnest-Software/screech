@@ -42,9 +42,7 @@ void build_sysctl_string(char* buffer, size_t size);
 void build_system_lib_path(char* buffer, size_t size, const char* lib_name);
 void build_framework_path(char* buffer, size_t size, const char* framework_name);
 
-// Obfuscated syscall wrappers
-long obfuscated_ptrace(int request, int pid, void* addr, void* data);
-long obfuscated_sysctl(int* name, unsigned int namelen, void* oldp, size_t* oldlenp, void* newp, size_t newlen);
+// Note: obfuscated syscall wrappers are declared in direct_syscalls.h
 
 #ifdef __cplusplus
 }

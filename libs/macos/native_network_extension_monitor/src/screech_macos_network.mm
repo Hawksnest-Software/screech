@@ -8,6 +8,9 @@
 #include <sstream>
 #include <csignal>
 #include <string>
+#include <cstring>
+#include "screech_macos_network.h"
+#include "event_logger/EventLogger.h"
 
 #ifdef __APPLE__
 #include <EndpointSecurity/EndpointSecurity.h>
@@ -23,15 +26,6 @@
 #include <bsm/libbsm.h>
 #endif
 
-// Global flag to handle SIGINT
-static std::atomic<bool> shouldStop(false);
-
-void signalHandler(int signal) {
-    if (signal == SIGINT) {
-        std::cout << "\nReceived SIGINT, stopping network monitoring..." << std::endl;
-        shouldStop = true;
-    }
-}
 
 // Network connection event structure (similar to Linux eBPF version)
 struct connection_event {
@@ -74,6 +68,9 @@ private:
 #endif
     std::atomic<bool> isRunning{false};
     std::unordered_set<std::string> seenConnections;
+    
+    // Static instance for use in static callback
+    static MacOSNetworkMonitor* s_instance;
 
     std::string getCurrentTimestamp() {
         auto now = std::chrono::system_clock::now();
@@ -228,25 +225,40 @@ private:
         }
         seenConnections.insert(connectionId);
         
-        // Create log filename based on process name (matching Linux eBPF format)
-        std::string logFileName = "screech_" + eventInfo.process.name + ".log";
-        if (eventInfo.process.name.empty()) {
-            logFileName = "screech_unknown_process.log";
+        // Check if remote logging is enabled
+        EventLogger::EventLoggerEngine& logger = EventLogger::getGlobalLogger();
+        
+        if (logger.isRemoteLoggingEnabled()) {
+            // Remote logging enabled - send to EventLogger for remote transmission
+            std::string details = "CONN|" + eventInfo.networkDetails + "|" +
+                                "PID:" + std::to_string(eventInfo.process.pid) + "|" +
+                                "PROC:" + eventInfo.process.name + "|" +
+                                "UID:" + std::to_string(eventInfo.process.uid) + "|" +
+                                "PATH:" + eventInfo.process.path;
+            
+            logger.logNetworkEvent(eventInfo.eventType, eventInfo.process.name, 
+                                 eventInfo.process.path, details);
+        } else {
+            // Remote logging disabled - write to local file without screech_ prefix
+            std::string logFileName = eventInfo.process.name + ".log";
+            if (eventInfo.process.name.empty()) {
+                logFileName = "unknown_process.log";
+            }
+            
+            std::ofstream logFile(logFileName, std::ios::app);
+            if (logFile.is_open()) {
+                // Write greppable log entry (matching Linux eBPF format)
+                logFile << "[" << eventInfo.timestamp << "] "
+                       << "CONN|" << eventInfo.networkDetails << "|"
+                       << "PID:" << eventInfo.process.pid << "|"
+                       << "PROC:" << eventInfo.process.name << "|"
+                       << "UID:" << eventInfo.process.uid << "|"
+                       << "PATH:" << eventInfo.process.path << std::endl;
+                logFile.close();
+            }
         }
         
-        std::ofstream logFile(logFileName, std::ios::app);
-        if (logFile.is_open()) {
-            // Write greppable log entry (matching Linux eBPF format)
-            logFile << "[" << eventInfo.timestamp << "] "
-                   << "CONN|" << eventInfo.networkDetails << "|"
-                   << "PID:" << eventInfo.process.pid << "|"
-                   << "PROC:" << eventInfo.process.name << "|"
-                   << "UID:" << eventInfo.process.uid << "|"
-                   << "PATH:" << eventInfo.process.path << std::endl;
-            logFile.close();
-        }
-        
-        // Also log to console (matching Linux eBPF format)
+        // Always log to console (matching Linux eBPF format)
         std::cout << "[" << eventInfo.timestamp << "] NEW CONNECTION: "
                   << eventInfo.networkDetails
                   << " (PID: " << eventInfo.process.pid << ", Process: " << eventInfo.process.name << ")"
@@ -254,33 +266,50 @@ private:
     }
 
     void logProcessEvent(const EventInfo& eventInfo) {
-        // Create log filename based on process name
-        std::string logFileName = "screech_" + eventInfo.process.name + ".log";
-        if (eventInfo.process.name.empty()) {
-            logFileName = "screech_unknown_process.log";
+        // Check if remote logging is enabled
+        EventLogger::EventLoggerEngine& logger = EventLogger::getGlobalLogger();
+        
+        if (logger.isRemoteLoggingEnabled()) {
+            // Remote logging enabled - send to EventLogger for remote transmission
+            std::string details = "EVENT|" + eventInfo.eventType + "|" +
+                                "PID:" + std::to_string(eventInfo.process.pid) + "|" +
+                                "PROC:" + eventInfo.process.name + "|" +
+                                "UID:" + std::to_string(eventInfo.process.uid) + "|" +
+                                "PATH:" + eventInfo.process.path;
+            
+            logger.logProcessEvent(eventInfo.eventType, eventInfo.process.name, 
+                                 eventInfo.process.path, details);
+        } else {
+            // Remote logging disabled - write to local file without screech_ prefix
+            std::string logFileName = eventInfo.process.name + ".log";
+            if (eventInfo.process.name.empty()) {
+                logFileName = "unknown_process.log";
+            }
+            
+            std::ofstream logFile(logFileName, std::ios::app);
+            if (logFile.is_open()) {
+                // Write greppable log entry
+                logFile << "[" << eventInfo.timestamp << "] "
+                       << "EVENT|" << eventInfo.eventType << "|"
+                       << "PID:" << eventInfo.process.pid << "|"
+                       << "PROC:" << eventInfo.process.name << "|"
+                       << "UID:" << eventInfo.process.uid << "|"
+                       << "PATH:" << eventInfo.process.path << std::endl;
+                logFile.close();
+            }
         }
         
-        std::ofstream logFile(logFileName, std::ios::app);
-        if (logFile.is_open()) {
-            // Write greppable log entry
-            logFile << "[" << eventInfo.timestamp << "] "
-                   << "EVENT|" << eventInfo.eventType << "|"
-                   << "PID:" << eventInfo.process.pid << "|"
-                   << "PROC:" << eventInfo.process.name << "|"
-                   << "UID:" << eventInfo.process.uid << "|"
-                   << "PATH:" << eventInfo.process.path << std::endl;
-            logFile.close();
-        }
-        
-        // Also log to console
+        // Always log to console
         std::cout << "[" << eventInfo.timestamp << "] " << eventInfo.eventType << ": "
                   << eventInfo.process.name << " (PID: " << eventInfo.process.pid << ")"
                   << std::endl;
     }
 
     static void staticHandleEvent(const es_message_t* message) {
-        // This static function would need access to the instance
-        // For now, we'll use the instance-based approach
+        // Use static instance to handle the event
+        if (s_instance && message) {
+            s_instance->handleEvent(message);
+        }
     }
 #endif
 
@@ -295,9 +324,7 @@ public:
     ~MacOSNetworkMonitor() {
         stop();
 #ifdef __APPLE__
-        if (monitorQueue) {
-            dispatch_release(monitorQueue);
-        }
+        // monitorQueue will be automatically released by ARC
 #endif
     }
 
@@ -312,7 +339,6 @@ public:
         es_new_client_result_t result = es_new_client(&esClient, handler);
         if (result != ES_NEW_CLIENT_RESULT_SUCCESS) {
             std::cerr << "Failed to create Endpoint Security client: " << result << std::endl;
-            std::cerr << "Make sure the application has proper entitlements and SIP is configured." << std::endl;
             return false;
         }
 
@@ -364,31 +390,64 @@ public:
     }
 };
 
-int main() {
-    // Register signal handler for SIGINT (Ctrl+C)
-    signal(SIGINT, signalHandler);
-    
-    std::cout << "Starting screech - macOS Network Monitor (Endpoint Security)" << std::endl;
-    std::cout << "This version replicates Linux eBPF network monitoring using Endpoint Security" << std::endl;
-    std::cout << "Monitors network connections, process execution, and system events" << std::endl;
-    std::cout << "Note: Requires proper entitlements and may need SIP configuration" << std::endl;
-    
-    MacOSNetworkMonitor monitor;
-    
-    if (!monitor.start()) {
-        std::cerr << "Failed to start network monitor" << std::endl;
-        return 1;
-    }
-    
-    std::cout << "Monitoring network connections and process events... Press Ctrl+C to stop." << std::endl;
-    
-    // Keep the main thread alive while monitoring
-    while (!shouldStop && monitor.isMonitoring()) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    }
-    
-    monitor.stop();
-    
-    std::cout << "Monitoring stopped." << std::endl;
-    return 0;
+// Static member definition
+MacOSNetworkMonitor* MacOSNetworkMonitor::s_instance = nullptr;
+
+// C wrapper functions to bridge to the C++ class
+extern "C" {
+
+macos_network_monitor_t* macos_network_monitor_create(void) {
+    return reinterpret_cast<macos_network_monitor_t*>(new MacOSNetworkMonitor());
 }
+
+void macos_network_monitor_destroy(macos_network_monitor_t* monitor) {
+    if (monitor) {
+        delete reinterpret_cast<MacOSNetworkMonitor*>(monitor);
+    }
+}
+
+bool macos_network_monitor_start(macos_network_monitor_t* monitor) {
+    if (monitor) {
+        return reinterpret_cast<MacOSNetworkMonitor*>(monitor)->start();
+    }
+    return false;
+}
+
+void macos_network_monitor_stop(macos_network_monitor_t* monitor) {
+    if (monitor) {
+        reinterpret_cast<MacOSNetworkMonitor*>(monitor)->stop();
+    }
+}
+
+bool macos_network_monitor_is_running(const macos_network_monitor_t* monitor) {
+    if (monitor) {
+        return reinterpret_cast<const MacOSNetworkMonitor*>(monitor)->isMonitoring();
+    }
+    return false;
+}
+
+void macos_network_monitor_set_network_callback(macos_network_monitor_t* monitor, 
+                                               macos_network_event_callback_t callback, 
+                                               void* user_data) {
+    // For now, this is a stub implementation
+    // The C++ class would need to be extended to support callbacks
+    (void)monitor;
+    (void)callback;
+    (void)user_data;
+}
+
+// Stub implementations for other declared functions
+void macos_network_monitor_get_stats(const macos_network_monitor_t* monitor, macos_capture_stats_t* stats) {
+    (void)monitor;
+    if (stats) {
+        memset(stats, 0, sizeof(*stats));
+    }
+}
+
+const char* macos_network_get_last_error(const macos_network_monitor_t* monitor) {
+    (void)monitor;
+    return "No error";
+}
+
+} // extern "C"
+
