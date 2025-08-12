@@ -1,0 +1,2 @@
+option('cross_prefix', type : 'string', value : '', description : 'Cross-compilation prefix (e.g., aarch64-unknown-linux-gnu)')
+option('kernel_profile', type : 'string', value : '', description : 'Path to kernel profile JSON file for feature detection')

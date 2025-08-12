@@ -1,0 +1,35 @@
+{
+  "profile_info": {
+    "timestamp": "2025-08-12T20:30:13Z",
+    "profiled_host": "pi@192.168.1.42",
+    "generated_by": "burningserenity@neuropipe"
+  },
+  "kernel": {
+    "version": "6.12.34+rpt-rpi-v8",
+    "architecture": "aarch64"
+  },
+  "bpf_features": {
+    "btf_vmlinux": false,
+    "bpf_syscall": "true",
+    "bpf_jit": "true",
+    "bpf_fs": true,
+    "ringbuf_support": false,
+    "core_support": false,
+    "unprivileged_bpf_disabled": "unknown",
+    "bpf_jit_harden": "unknown"
+  },
+  "tracing": {
+    "kprobes": true,
+    "tracepoints": true,
+    "available_kprobe_points": 7
+  },
+  "tools": {
+    "bpftool": false
+  },
+  "recommendations": {
+    "use_btf": false,
+    "use_core": false,
+    "use_ringbuf": false,
+    "use_kprobes": true
+  }
+}
