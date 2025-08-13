@@ -7,7 +7,8 @@ set -e
 
 REMOTE_HOST="$1"
 OUTPUT_FILE="${2:-kernel_profile.json}"
-SCRIPT_DIR="$(dirname "$0")"
+# Get the project root directory (parent of scripts directory)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 CONFIG_DIR="$PROJECT_DIR/config"
 

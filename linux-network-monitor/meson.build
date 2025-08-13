@@ -197,7 +197,7 @@ linux_network_monitor = executable('linux-network-monitor',
 )
 
 # Install script to create log directories
-install_data('create_log_dirs.sh', install_dir : 'bin', install_mode : 'rwxr-xr-x')
+install_data('scripts/create_log_dirs.sh', install_dir : 'bin', install_mode : 'rwxr-xr-x')
 
 # Summary
 message('Configuration Summary:')

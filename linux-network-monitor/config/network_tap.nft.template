@@ -1,0 +1,161 @@
+#!/usr/sbin/nft -f
+
+# nftables configuration template for Raspberry Pi Network Tap
+# Enhanced for detailed packet analysis and process identification
+# Supports both IPv4 and IPv6 traffic monitoring and forwarding
+# This template uses variables that should be substituted at runtime
+
+# Clear existing ruleset
+flush ruleset
+
+# Define variables (to be substituted by configuration script)
+define TARGET_IPV4 = {{TARGET_IPV4}}
+define TARGET_MAC = {{TARGET_MAC}}
+
+# Define common ports for classification
+define HTTP_PORTS = { 80, 8080, 8000, 3000 }
+define HTTPS_PORTS = { 443, 8443 }
+define SSH_PORTS = { 22, 2222 }
+define DNS_PORTS = { 53 }
+define EMAIL_PORTS = { 25, 110, 143, 465, 587, 993, 995 }
+define DB_PORTS = { 3306, 5432, 1521, 1433 }
+define SYSTEM_PORTS = { 1-1023 }
+define EPHEMERAL_PORTS = { 32768-65535 }
+
+# Main table for both IPv4 and IPv6 traffic monitoring
+table inet tap_monitor {
+    # Counters for different traffic types
+    map traffic_counters {
+        type inet_service . inet_proto : counter
+    }
+    
+    # Chain for incoming packets (prerouting)
+    chain prerouting {
+        type filter hook prerouting priority -150; policy accept;
+        
+        # === IPv4 Traffic Analysis ===
+        
+        # Outbound traffic from target (detailed classification)
+        ip saddr $TARGET_IPV4 tcp dport $HTTP_PORTS log prefix "TAP-OUT-HTTP: " level info
+        ip saddr $TARGET_IPV4 tcp dport $HTTPS_PORTS log prefix "TAP-OUT-HTTPS: " level info  
+        ip saddr $TARGET_IPV4 tcp dport $SSH_PORTS log prefix "TAP-OUT-SSH: " level info
+        ip saddr $TARGET_IPV4 udp dport $DNS_PORTS log prefix "TAP-OUT-DNS: " level info
+        ip saddr $TARGET_IPV4 tcp dport $EMAIL_PORTS log prefix "TAP-OUT-EMAIL: " level info
+        ip saddr $TARGET_IPV4 tcp dport $DB_PORTS log prefix "TAP-OUT-DB: " level info
+        
+        # System vs user initiated connections
+        ip saddr $TARGET_IPV4 tcp sport $SYSTEM_PORTS log prefix "TAP-OUT-SYS: " level info
+        ip saddr $TARGET_IPV4 tcp sport $EPHEMERAL_PORTS log prefix "TAP-OUT-USER: " level info
+        ip saddr $TARGET_IPV4 udp sport $EPHEMERAL_PORTS log prefix "TAP-OUT-UDP-USER: " level info
+        
+        # Special protocols
+        ip saddr $TARGET_IPV4 ip protocol icmp log prefix "TAP-OUT-ICMP: " level info
+        
+        # Generic IPv4 outbound (catch-all)
+        ip saddr $TARGET_IPV4 log prefix "TAP-OUT-IPv4: " level info
+        
+        # Inbound traffic to target (detailed classification)  
+        ip daddr $TARGET_IPV4 tcp sport $HTTP_PORTS log prefix "TAP-IN-HTTP: " level info
+        ip daddr $TARGET_IPV4 tcp sport $HTTPS_PORTS log prefix "TAP-IN-HTTPS: " level info
+        ip daddr $TARGET_IPV4 tcp sport $SSH_PORTS log prefix "TAP-IN-SSH: " level info
+        ip daddr $TARGET_IPV4 udp sport $DNS_PORTS log prefix "TAP-IN-DNS: " level info
+        ip daddr $TARGET_IPV4 tcp sport $EMAIL_PORTS log prefix "TAP-IN-EMAIL: " level info
+        ip daddr $TARGET_IPV4 tcp sport $DB_PORTS log prefix "TAP-IN-DB: " level info
+        
+        # System vs user responses
+        ip daddr $TARGET_IPV4 tcp dport $SYSTEM_PORTS log prefix "TAP-IN-SYS: " level info
+        ip daddr $TARGET_IPV4 tcp dport $EPHEMERAL_PORTS log prefix "TAP-IN-USER: " level info
+        ip daddr $TARGET_IPV4 udp dport $EPHEMERAL_PORTS log prefix "TAP-IN-UDP-USER: " level info
+        
+        # Special protocols inbound
+        ip daddr $TARGET_IPV4 ip protocol icmp log prefix "TAP-IN-ICMP: " level info
+        
+        # Generic IPv4 inbound (catch-all)
+        ip daddr $TARGET_IPV4 log prefix "TAP-IN-IPv4: " level info
+        
+        # === IPv6 Traffic Analysis ===
+        
+        # IPv6 outbound from target MAC  
+        ether saddr $TARGET_MAC ip6 version 6 tcp dport $HTTP_PORTS log prefix "TAP-OUT-HTTP6: " level info
+        ether saddr $TARGET_MAC ip6 version 6 tcp dport $HTTPS_PORTS log prefix "TAP-OUT-HTTPS6: " level info
+        ether saddr $TARGET_MAC ip6 version 6 tcp dport $SSH_PORTS log prefix "TAP-OUT-SSH6: " level info
+        ether saddr $TARGET_MAC ip6 version 6 udp dport $DNS_PORTS log prefix "TAP-OUT-DNS6: " level info
+        ether saddr $TARGET_MAC ip6 version 6 tcp dport $EMAIL_PORTS log prefix "TAP-OUT-EMAIL6: " level info
+        ether saddr $TARGET_MAC ip6 version 6 tcp dport $DB_PORTS log prefix "TAP-OUT-DB6: " level info
+        
+        # IPv6 system vs user
+        ether saddr $TARGET_MAC ip6 version 6 tcp sport $SYSTEM_PORTS log prefix "TAP-OUT-SYS6: " level info
+        ether saddr $TARGET_MAC ip6 version 6 tcp sport $EPHEMERAL_PORTS log prefix "TAP-OUT-USER6: " level info
+        ether saddr $TARGET_MAC ip6 version 6 udp sport $EPHEMERAL_PORTS log prefix "TAP-OUT-UDP-USER6: " level info
+        
+        # IPv6 special protocols
+        ether saddr $TARGET_MAC ip6 nexthdr icmpv6 log prefix "TAP-OUT-ICMPv6: " level info
+        
+        # Generic IPv6 outbound (catch-all)
+        ether saddr $TARGET_MAC ip6 version 6 log prefix "TAP-OUT-IPv6: " level info
+        
+        # IPv6 inbound to target MAC
+        ether daddr $TARGET_MAC ip6 version 6 tcp sport $HTTP_PORTS log prefix "TAP-IN-HTTP6: " level info
+        ether daddr $TARGET_MAC ip6 version 6 tcp sport $HTTPS_PORTS log prefix "TAP-IN-HTTPS6: " level info
+        ether daddr $TARGET_MAC ip6 version 6 tcp sport $SSH_PORTS log prefix "TAP-IN-SSH6: " level info
+        ether daddr $TARGET_MAC ip6 version 6 udp sport $DNS_PORTS log prefix "TAP-IN-DNS6: " level info
+        ether daddr $TARGET_MAC ip6 version 6 tcp sport $EMAIL_PORTS log prefix "TAP-IN-EMAIL6: " level info
+        ether daddr $TARGET_MAC ip6 version 6 tcp sport $DB_PORTS log prefix "TAP-IN-DB6: " level info
+        
+        # IPv6 system vs user responses
+        ether daddr $TARGET_MAC ip6 version 6 tcp dport $SYSTEM_PORTS log prefix "TAP-IN-SYS6: " level info
+        ether daddr $TARGET_MAC ip6 version 6 tcp dport $EPHEMERAL_PORTS log prefix "TAP-IN-USER6: " level info
+        ether daddr $TARGET_MAC ip6 version 6 udp dport $EPHEMERAL_PORTS log prefix "TAP-IN-UDP-USER6: " level info
+        
+        # IPv6 special protocols inbound
+        ether daddr $TARGET_MAC ip6 nexthdr icmpv6 log prefix "TAP-IN-ICMPv6: " level info
+        
+        # Generic IPv6 inbound (catch-all)
+        ether daddr $TARGET_MAC ip6 version 6 log prefix "TAP-IN-IPv6: " level info
+    }
+    
+    # Chain for forwarded packets with detailed counters
+    chain forward {
+        type filter hook forward priority 0; policy accept;
+        
+        # IPv4 forwarding with protocol-specific counters
+        ip saddr $TARGET_IPV4 ip protocol tcp counter accept
+        ip saddr $TARGET_IPV4 ip protocol udp counter accept 
+        ip saddr $TARGET_IPV4 ip protocol icmp counter accept
+        ip saddr $TARGET_IPV4 counter accept
+        
+        ip daddr $TARGET_IPV4 ip protocol tcp counter accept
+        ip daddr $TARGET_IPV4 ip protocol udp counter accept
+        ip daddr $TARGET_IPV4 ip protocol icmp counter accept
+        ip daddr $TARGET_IPV4 counter accept
+        
+        # IPv6 forwarding with protocol-specific counters
+        ether saddr $TARGET_MAC ip6 nexthdr tcp counter accept
+        ether saddr $TARGET_MAC ip6 nexthdr udp counter accept
+        ether saddr $TARGET_MAC ip6 nexthdr icmpv6 counter accept
+        ether saddr $TARGET_MAC ip6 version 6 counter accept
+        
+        ether daddr $TARGET_MAC ip6 nexthdr tcp counter accept
+        ether daddr $TARGET_MAC ip6 nexthdr udp counter accept
+        ether daddr $TARGET_MAC ip6 nexthdr icmpv6 counter accept
+        ether daddr $TARGET_MAC ip6 version 6 counter accept
+    }
+}
+
+# NAT table for IPv4 masquerading
+table ip tap_nat {
+    chain postrouting {
+        type nat hook postrouting priority 100; policy accept;
+        oifname "{{PRIMARY_INTERFACE}}" masquerade
+        oifname "{{SECONDARY_INTERFACE}}" masquerade
+    }
+}
+
+# IPv6 NAT table for masquerading
+table ip6 tap_nat6 {
+    chain postrouting {
+        type nat hook postrouting priority 100; policy accept;
+        oifname "{{PRIMARY_INTERFACE}}" masquerade
+        oifname "{{SECONDARY_INTERFACE}}" masquerade
+    }
+}

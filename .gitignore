@@ -61,3 +61,4 @@ coverage/
 docs/_build/
 docs/html/
 docs/latex/
+*rpi-kernel-build*

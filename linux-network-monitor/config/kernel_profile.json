@@ -1,0 +1,35 @@
+{
+  "profile_info": {
+    "timestamp": "2025-08-13T01:50:35Z",
+    "profiled_host": "localhost",
+    "generated_by": "burningserenity@neuropipe"
+  },
+  "kernel": {
+    "version": "6.15.9-gentoo-dist",
+    "architecture": "x86_64"
+  },
+  "bpf_features": {
+    "btf_vmlinux": false,
+    "bpf_syscall": "true",
+    "bpf_jit": "true",
+    "bpf_fs": true,
+    "ringbuf_support": false,
+    "core_support": false,
+    "unprivileged_bpf_disabled": "2",
+    "bpf_jit_harden": "unknown"
+  },
+  "tracing": {
+    "kprobes": false,
+    "tracepoints": false,
+    "available_kprobe_points": 0
+  },
+  "tools": {
+    "bpftool": true
+  },
+  "recommendations": {
+    "use_btf": false,
+    "use_core": false,
+    "use_ringbuf": false,
+    "use_kprobes": false
+  }
+}
