@@ -8,10 +8,7 @@ set -euo pipefail
 
 # Default configuration
 # Get the project root directory (parent of scripts directory)
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-CONFIG_DIR="${PROJECT_ROOT}/config"
-TEMPLATE_FILE="${CONFIG_DIR}/network_tap.nft.template"
+TEMPLATE_FILE="network_tap.nft.template"
 OUTPUT_FILE="/tmp/network_tap.nft"
 SYSCTL_BACKUP="/tmp/sysctl.conf.backup"
 
@@ -75,7 +72,11 @@ validate_mac() {
 # Function to enable IP forwarding
 enable_forwarding() {
     echo "Enabling IP forwarding..."
-    
+    ip link add name br0 type bridge
+    ip link set br0 up
+    ip link set eth1 master br0
+    ip link set eth0 master br0   
+    ip route add "$target_ip/32" dev br0 proto kernel scope link src "$(ip address show "$primary_iface" | grep "inet " | awk '{split($2, b, "/"); print b[1]}')" metric 100
     # Backup current sysctl.conf
     if [[ -f /etc/sysctl.conf ]]; then
         cp /etc/sysctl.conf "$SYSCTL_BACKUP"
@@ -84,6 +85,9 @@ enable_forwarding() {
     # Enable forwarding
     sysctl -w net.ipv4.ip_forward=1
     sysctl -w net.ipv6.conf.all.forwarding=1
+    modprobe br_netfilter
+    sysctl -w net.bridge.bridge-nf-call-iptables=1
+    sysctl -w net.bridge.bridge-nf-call-ip6tables=1
     
     # Make persistent
     if ! grep -q "net.ipv4.ip_forward=1" /etc/sysctl.conf; then
@@ -91,6 +95,16 @@ enable_forwarding() {
     fi
     if ! grep -q "net.ipv6.conf.all.forwarding=1" /etc/sysctl.conf; then
         echo "net.ipv6.conf.all.forwarding=1" >> /etc/sysctl.conf
+    fi
+    if ! grep -q "br_netfilter" /etc/modules-load.d/screech.conf; then
+      touch /etc/modules-load.d/screech.conf
+      echo "br_netfilter" >> /etc/modules-load.d/screech.conf
+    fi
+    if ! grep -q "net.bridge.bridge-nf-call-iptables=1" /etc/sysctl.conf; then
+      echo "net.bridge.bridge-nf-call-iptables=1" >> /etc/sysctl.conf
+    fi
+    if ! grep -q "net.bridge.bridge-nf-call-ip6tables=1" /etc/sysctl.conf; then
+      echo "net.bridge.bridge-nf-call-ip6tables=1" >> /etc/sysctl.conf
     fi
 }
 
@@ -149,9 +163,15 @@ remove_config() {
     fi
     
     # Disable forwarding
+    ip link set br0 down
+    ip link delete dev br0
+
     sysctl -w net.ipv4.ip_forward=0 2>/dev/null || true
     sysctl -w net.ipv6.conf.all.forwarding=0 2>/dev/null || true
+    sysctl -w net.bridge.bridge-nf-call-iptables=0 2>/dev/null || true
+    sysctl -w net.bridge.bridge-nf-call-ip6tables=0 2>/dev/null || true
     
+    ip route delete "$(ip route show dev br0 | awk '{print $1}')"
     echo "Network tap configuration removed"
 }
 

@@ -1,15 +1,15 @@
 {
   "profile_info": {
-    "timestamp": "2025-08-12T20:30:13Z",
-    "profiled_host": "pi@192.168.1.42",
+    "timestamp": "2025-08-13T17:34:54Z",
+    "profiled_host": "pi@192.168.1.33",
     "generated_by": "burningserenity@neuropipe"
   },
   "kernel": {
-    "version": "6.12.34+rpt-rpi-v8",
+    "version": "6.12.41-v8+",
     "architecture": "aarch64"
   },
   "bpf_features": {
-    "btf_vmlinux": false,
+    "btf_vmlinux": true,
     "bpf_syscall": "true",
     "bpf_jit": "true",
     "bpf_fs": true,
@@ -27,7 +27,7 @@
     "bpftool": false
   },
   "recommendations": {
-    "use_btf": false,
+    "use_btf": true,
     "use_core": false,
     "use_ringbuf": false,
     "use_kprobes": true
