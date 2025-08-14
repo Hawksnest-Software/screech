@@ -92,7 +92,7 @@ parse_syslog() {
 # Listen on UDP port 514
 echo "Starting syslog UDP receiver on port 514..."
 while true; do
-    nc -l -u -p 514 | while read line; do
+    nc -lukp 514 | while read line; do
         parse_syslog "$line"
     done
 done
