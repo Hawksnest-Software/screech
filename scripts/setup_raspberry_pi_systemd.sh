@@ -69,11 +69,13 @@ parse_syslog() {
     
     # Extract hostname from syslog message format
     # Format: <priority>timestamp hostname program: message
-    if [[ $message =~ ^\<[0-9]+\>.*\ ([^\ ]+)\ ([^:\ \[]+)(\[[0-9]+\])?:\ (.*)$ ]]; then
+    if [[ $message =~ ^\<[0-9]+\>\ *([^ ]*)\ *.+\[EVENT\]:\ *EVENT=(\[.+\])\ *(.+)\ *PROC=([^ ]+)\ *(.*)$ ]]; then
         local hostname="${BASH_REMATCH[1]}"
-        local program="${BASH_REMATCH[2]}"
-        local message_content="${BASH_REMATCH[4]}"
-        
+        local tag="${BASH_REMATCH[2]}"
+        local action="${BASH_REMATCH[3]}"
+        local program="${BASH_REMATCH[4]}"
+        local message_content="${BASH_REMATCH[5]}"        
+
         # Create host directory if it doesn't exist
         mkdir -p "$LOG_DIR/hosts/$hostname"
         

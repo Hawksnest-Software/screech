@@ -112,16 +112,10 @@ public:
         int facilityNum = getFacilityNumber(config.facility);
         int priority = facilityNum * 8 + static_cast<int>(level);
         
-        // Get current timestamp
-        auto now = std::chrono::system_clock::now();
-        auto time_t = std::chrono::system_clock::to_time_t(now);
-        std::stringstream timestamp;
-        timestamp << std::put_time(std::localtime(&time_t), "%b %d %H:%M:%S");
-        
         // Build syslog message
         std::stringstream syslogMessage;
         syslogMessage << "<" << priority << ">"
-                     << timestamp.str() << " ";
+                     << " ";
         
         if (config.useHostnamePrefix) {
             syslogMessage << hostname << " ";
@@ -131,7 +125,7 @@ public:
         if (!tag.empty()) {
             syslogMessage << "[" << tag << "]";
         }
-        syslogMessage << ": " << message;
+        syslogMessage << ": " << message << "\n";
         
         return syslogMessage.str();
     }
