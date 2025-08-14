@@ -76,6 +76,8 @@ enable_forwarding() {
     ip link set br0 up
     ip link set eth1 master br0
     ip link set eth0 master br0   
+    ip route delete 192.168.1.0/24 dev eth0
+    ip route delete default via 192.168.1.1 dev eth0
     ip route add "$target_ip/32" dev br0 proto kernel scope link src "$(ip address show "$primary_iface" | grep "inet " | awk '{split($2, b, "/"); print b[1]}')" metric 100
     # Backup current sysctl.conf
     if [[ -f /etc/sysctl.conf ]]; then
@@ -164,7 +166,6 @@ remove_config() {
     
     # Disable forwarding
     ip link set br0 down
-    ip link delete dev br0
 
     sysctl -w net.ipv4.ip_forward=0 2>/dev/null || true
     sysctl -w net.ipv6.conf.all.forwarding=0 2>/dev/null || true
@@ -172,6 +173,9 @@ remove_config() {
     sysctl -w net.bridge.bridge-nf-call-ip6tables=0 2>/dev/null || true
     
     ip route delete "$(ip route show dev br0 | awk '{print $1}')"
+    ip link delete dev br0
+    ip route add 192.168.1.0/24 dev eth0 proto kernel scope link src 192.168.1.36 metric 100
+    ip route add default via 192.168.1.1 dev eth0 proto dhcp src 192.168.1.36 metric 100
     echo "Network tap configuration removed"
 }
 
