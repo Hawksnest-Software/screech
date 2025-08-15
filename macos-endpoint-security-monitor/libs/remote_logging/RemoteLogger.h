@@ -28,6 +28,7 @@ struct RemoteLogConfig {
     int serverPort = 514;           // Standard syslog port
     std::string facility = "local0"; // Syslog facility
     std::string appName = "monitor";
+    std::string sessionId;           // Session identifier for log organization
     bool useHostnamePrefix = true;   // Prefix logs with hostname
     int timeoutMs = 5000;           // Connection timeout
     bool fallbackToLocal = true;    // Fall back to local logging on failure

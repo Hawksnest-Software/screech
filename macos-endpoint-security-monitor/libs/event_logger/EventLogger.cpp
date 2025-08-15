@@ -8,6 +8,7 @@
 #include <chrono>
 #include <ctime>
 #include <mutex>
+#include <unistd.h>
 
 #ifdef __APPLE__
 #include <os/log.h>
@@ -119,6 +120,12 @@ bool EventLoggerEngine::enableRemoteLogging(const std::string& serverHost, int s
     config.serverPort = serverPort;
     config.facility = "local0";
     config.appName = "monitor";
+    
+    // Create session ID from process PID and timestamp for uniqueness
+    std::stringstream sessionIdStream;
+    sessionIdStream << "pid" << getpid() << "_" << time(nullptr);
+    config.sessionId = sessionIdStream.str();
+    
     config.useHostnamePrefix = true;
     config.fallbackToLocal = true;
     

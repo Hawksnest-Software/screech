@@ -195,6 +195,7 @@ int should_filter_event(const struct connection_event *event) {
 
 // Log connection info to rsyslog with process separation
 void log_connection_info(const struct connection_event *event) {
+  printf("log connection info\n");
     char syslog_ident[64];
     char log_msg[512];
     
@@ -221,6 +222,7 @@ void log_connection_info(const struct connection_event *event) {
              event->pid, event->uid, event->gid,
              process_name, protocol_to_string(event->protocol));
     
+    printf("log_msg: %s\n", log_msg);
     // Add connection details if available
     if (event->src_ip != 0 || event->dst_ip != 0 || event->src_port != 0 || event->dst_port != 0) {
         char conn_details[256];
@@ -264,6 +266,7 @@ void log_connection_info(const struct connection_event *event) {
 
 // Ring buffer callback
 static int handle_event(void *ctx __attribute__((unused)), void *data, size_t data_sz) {
+  printf("incoming event\n");
     if (data_sz < sizeof(struct connection_event)) {
         fprintf(stderr, "Invalid event size: %zu\n", data_sz);
         return 0;
@@ -272,9 +275,9 @@ static int handle_event(void *ctx __attribute__((unused)), void *data, size_t da
     const struct connection_event *event = (const struct connection_event *)data;
     
     // Apply interface filtering for eBPF events
-    if (should_filter_event(event)) {
-        return 0; // Skip this event
-    }
+   // if (should_filter_event(event)) {
+   //     return 0; // Skip this event
+   // }
     
     log_connection_info(event);
     
@@ -370,6 +373,7 @@ int load_and_attach_programs(void) {
     // Set up ring buffer
     ring_buffer_fd = bpf_map__fd(connection_events_map);
     rb = ring_buffer__new(ring_buffer_fd, handle_event, NULL, NULL);
+    printf("did ring buffer\n");
     if (!rb) {
         fprintf(stderr, "Failed to create ring buffer\n");
         bpf_object__close(obj);

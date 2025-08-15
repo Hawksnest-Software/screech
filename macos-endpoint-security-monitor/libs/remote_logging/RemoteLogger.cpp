@@ -107,6 +107,7 @@ public:
     
     std::string formatSyslogMessageWithProgramName(const std::string& programName, LogLevel level, const std::string& tag, const std::string& message) {
         // RFC 3164 syslog format: <priority>timestamp hostname tag: message
+        // We add a session ID for better log organization: <priority>hostname program[session_id]: message
         
         // Calculate priority (facility * 8 + severity)
         int facilityNum = getFacilityNumber(config.facility);
@@ -122,6 +123,9 @@ public:
         }
         
         syslogMessage << programName;
+        if (!config.sessionId.empty()) {
+            syslogMessage << "[" << config.sessionId << "]";
+        }
         if (!tag.empty()) {
             syslogMessage << "[" << tag << "]";
         }
